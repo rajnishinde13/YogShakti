@@ -1,36 +1,134 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# 🪷 YogShakti
 
-## Getting Started
+A **Yoga Asana Search Engine / Knowledge Application**.
 
-First, run the development server:
+YogShakti is not a class-booking site. It is a searchable knowledge base of yoga
+asanas — look up a pose by its Sanskrit name, English name or category, and
+understand what it actually does for the body.
+
+Built in the open by **[@risingwithrajni](https://github.com/risingwithrajni)**,
+one phase at a time.
+
+---
+
+## Current status — Phase 1 ✅
+
+Phase 1 is the **frontend foundation**. Everything on screen runs from a static
+JavaScript array. There is no database, no login and no API yet — that is
+deliberate.
+
+**What works right now**
+
+- Responsive homepage
+- Header with YogShakti branding
+- Hero section
+- Search bar that filters as you type (`useState`)
+- 6 asana cards rendered from an array with `.map()`
+- Empty state when nothing matches
+- Footer
+
+---
+
+## Getting started
+
+**You need:** [Node.js](https://nodejs.org) 18 or newer.
 
 ```bash
+# 1. install dependencies (only needed the first time)
+npm install
+
+# 2. start the development server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Then open **[http://localhost:3000](http://localhost:3000)**.
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+Edit any file in `components/` and save — the page updates in the browser
+instantly. No environment variables are required for Phase 1.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+---
 
-## Learn More
+## Project structure
 
-To learn more about Next.js, take a look at the following resources:
+```
+YogShakti/
+├── app/
+│   ├── layout.js        # wraps every page — Header, Footer, fonts, <head>
+│   ├── page.js          # the homepage; owns the search state
+│   └── globals.css      # imports Tailwind
+│
+├── components/          # reusable UI pieces
+│   ├── Header.jsx       # top bar + branding
+│   ├── Hero.jsx         # headline section
+│   ├── SearchBar.jsx    # controlled input (value + onChange props)
+│   ├── AsanaCard.jsx    # renders ONE asana
+│   ├── AsanaList.jsx    # renders MANY asanas via .map()
+│   └── Footer.jsx       # bottom bar
+│
+├── data/
+│   └── asanas.js        # placeholder data (replaced by the DB in Phase 2)
+│
+├── public/              # static files (images, icons)
+├── .env.example         # template for future environment variables
+└── package.json
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Why the search state lives in `page.js`
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+`SearchBar` does not own the text the user types. `page.js` does, and passes it
+down as props:
 
-## Deploy on Vercel
+```
+page.js  ──  query, setQuery  ──▶  SearchBar
+   │
+   └──  filtered results  ──▶  AsanaList  ──▶  AsanaCard (× many)
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+This is called **lifting state up**. It is necessary because *two* components
+need to know about the search text — the input that displays it, and the list
+that filters by it. Whenever two components need the same value, that value
+belongs in their closest shared parent.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+
+## Scripts
+
+| Command         | What it does                              |
+| --------------- | ----------------------------------------- |
+| `npm run dev`   | Start the dev server on port 3000         |
+| `npm run build` | Build the production bundle               |
+| `npm start`     | Run the production build (after `build`)  |
+| `npm run lint`  | Check the code with ESLint                |
+
+---
+
+## Tech stack
+
+| Layer      | Choice                        |
+| ---------- | ----------------------------- |
+| Framework  | Next.js (App Router)          |
+| Language   | JavaScript (**not** TypeScript) |
+| UI         | React function components     |
+| Styling    | Tailwind CSS v4               |
+| Database   | PostgreSQL + Prisma *(Phase 2)* |
+
+> Tailwind v4 has no `tailwind.config.js`. Configuration lives in
+> `app/globals.css` instead.
+
+---
+
+## Roadmap
+
+- [x] **Phase 1** — Frontend foundation: layout, search UI, static asana cards
+- [ ] **Phase 2** — PostgreSQL + Prisma; move asanas into the database
+- [ ] **Phase 3** — Individual asana detail pages
+- [ ] **Phase 4** — Real search: filters by level, category and benefit
+- [ ] **Phase 5** — Images and illustrations for each pose
+
+---
+
+## A note on the content
+
+The asana descriptions here are for **learning and general information only**.
+They are not medical advice. Talk to a qualified teacher or doctor before
+starting a new practice.
