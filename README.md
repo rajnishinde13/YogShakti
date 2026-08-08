@@ -11,21 +11,33 @@ one phase at a time.
 
 ---
 
-## Current status — Phase 2 ✅
+## Current status — Phase 3 ✅
 
-**Phase 1** built the frontend foundation. **Phase 2** put PostgreSQL and
-Prisma behind it.
-
-The database now holds the six asanas and Prisma can read them back. The
-webpage does **not** query the database yet — it still renders from
-`data/asanas.js`. Connecting the two is Phase 3.
+**Phase 1** built the frontend. **Phase 2** added PostgreSQL and Prisma.
+**Phase 3** connected them — the homepage now reads real database rows.
 
 **What works right now**
 
-- Responsive homepage: header, hero, search bar, asana cards, footer
+- Homepage fetches asanas from PostgreSQL on every request
 - Search filters as you type (`useState` + `.filter()`)
+- Graceful screens for "database unreachable" and "database empty"
 - PostgreSQL database `yogshakti` with an `Asana` table
 - Prisma schema, a checked-in migration, and a re-runnable seed script
+
+### How data flows
+
+```
+PostgreSQL ──▶ Prisma ──▶ app/page.js ──props──▶ AsanaSearch ──▶ AsanaList ──▶ AsanaCard
+└──────── server: runs before HTML is sent ─────┘└──────── browser: interactive ────────┘
+```
+
+The split matters. `app/page.js` is a **server component** — no `"use client"`,
+so it runs only on the server and may use Prisma. `AsanaSearch` is a **client
+component** — it has `"use client"` because `useState` only exists in the
+browser.
+
+They cannot be the same file. Prisma holds your database credentials, and a
+client component's code is downloaded by every visitor.
 
 ---
 
@@ -65,12 +77,13 @@ Check the database is working at any time with `npm run db:verify`.
 YogShakti/
 ├── app/
 │   ├── layout.js        # wraps every page — Header, Footer, fonts, <head>
-│   ├── page.js          # the homepage; owns the search state
+│   ├── page.js          # SERVER component — queries Prisma, passes props down
 │   └── globals.css      # imports Tailwind
 │
 ├── components/          # reusable UI pieces
 │   ├── Header.jsx       # top bar + branding
 │   ├── Hero.jsx         # headline section
+│   ├── AsanaSearch.jsx  # CLIENT component — owns the search state
 │   ├── SearchBar.jsx    # controlled input (value + onChange props)
 │   ├── AsanaCard.jsx    # renders ONE asana
 │   ├── AsanaList.jsx    # renders MANY asanas via .map()
@@ -86,7 +99,7 @@ YogShakti/
 │   └── prisma.js        # one shared PrismaClient for the whole project
 │
 ├── data/
-│   └── asanas.js        # static data, still used by the page (until Phase 3)
+│   └── asanas.js        # sample data — now used ONLY by the seed script
 │
 ├── public/              # static files (images, icons)
 ├── prisma.config.mjs    # Prisma CLI config — loads .env, points at the schema
@@ -179,9 +192,9 @@ the file extension (`"../lib/prisma.js"`, not `"../lib/prisma"`).
 
 - [x] **Phase 1** — Frontend foundation: layout, search UI, static asana cards
 - [x] **Phase 2** — PostgreSQL + Prisma: schema, migration, seed, verification
-- [ ] **Phase 3** — Read asanas from the database instead of `data/asanas.js`
+- [x] **Phase 3** — Homepage reads asanas from the database
 - [ ] **Phase 4** — Individual asana detail pages
-- [ ] **Phase 5** — Real search: filters by level, category and benefit
+- [ ] **Phase 5** — Move search into SQL: filters by level, category and benefit
 - [ ] **Phase 6** — Images and illustrations for each pose
 
 ---

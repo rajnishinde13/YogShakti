@@ -1,9 +1,14 @@
-// Placeholder asana data for Phase 1.
+// Sample asana data.
 //
-// This is a plain JavaScript ARRAY of OBJECTS. Each object is one yoga pose.
-// In Phase 2 this file gets replaced by real rows from PostgreSQL (via Prisma),
-// but the shape of each object will stay roughly the same — so anything we
-// build on top of this array will keep working.
+// AS OF PHASE 3, THE HOMEPAGE NO LONGER READS THIS FILE.
+// app/page.js now fetches asanas from PostgreSQL through Prisma.
+//
+// This file is still used by ONE thing: prisma/seed.js, which loads these
+// poses into the database. Keeping it means you can rebuild the database
+// from scratch at any time with `npm run db:seed`.
+//
+// It is a plain JavaScript ARRAY of OBJECTS. The keys below match the columns
+// of the Asana table in prisma/schema.prisma.
 
 const asanas = [
   {
