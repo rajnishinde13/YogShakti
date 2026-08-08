@@ -5,22 +5,26 @@
 //
 //   array of data  ->  .map()  ->  array of components
 //
-// It also handles the "nothing matched" case, which is easy to forget.
+// It also handles the "nothing to show" case, which is easy to forget.
 
 import AsanaCard from "./AsanaCard";
 
-export default function AsanaList({ asanas }) {
-  // Empty state: shown when the search matches no asanas.
+// emptyTitle and emptyHint have DEFAULT VALUES, written with "=". If the
+// parent does not pass them, these are used. That lets the search results
+// show a different message from the normal listing without a second component.
+export default function AsanaList({
+  asanas,
+  emptyTitle = "No asanas found",
+  emptyHint = "Try a different name, level or category.",
+}) {
   if (asanas.length === 0) {
     return (
       <div className="rounded-2xl border border-dashed border-stone-300 bg-white py-16 text-center">
         <p className="text-2xl" aria-hidden="true">
           🍃
         </p>
-        <p className="mt-2 font-medium text-stone-700">No asanas found</p>
-        <p className="mt-1 text-sm text-stone-500">
-          Try a different name, level or category.
-        </p>
+        <p className="mt-2 font-medium text-stone-700">{emptyTitle}</p>
+        <p className="mt-1 text-sm text-stone-500">{emptyHint}</p>
       </div>
     );
   }

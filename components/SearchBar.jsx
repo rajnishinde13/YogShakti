@@ -1,17 +1,22 @@
 // SearchBar.jsx
 //
-// This component is "controlled" — it does NOT own the search text.
-// The text lives in app/page.js and is handed down here through PROPS:
+// A <form> wrapping the input and a Search button.
 //
-//   value    -> the current text to display in the input
-//   onChange -> a function to call when the user types
+// Using a real <form> gives the Enter key for free: pressing Enter inside a
+// form input fires the form's onSubmit, the same handler the button uses.
+// No keyboard event handling needed.
 //
-// This pattern is called "lifting state up". It matters because page.js
-// also needs the search text in order to filter the list of asanas.
+// This component is still "controlled" — it owns nothing. The text lives in
+// AsanaSearch and arrives here through PROPS:
+//
+//   value    -> the text to display
+//   onChange -> called when the user types
+//   onSubmit -> called on Enter or button click
+//   loading  -> true while the search request is in flight
 
-export default function SearchBar({ value, onChange }) {
+export default function SearchBar({ value, onChange, onSubmit, loading }) {
   return (
-    <div className="mx-auto w-full max-w-xl">
+    <form onSubmit={onSubmit} className="mx-auto w-full max-w-xl">
       <label htmlFor="asana-search" className="sr-only">
         Search asanas
       </label>
@@ -31,10 +36,20 @@ export default function SearchBar({ value, onChange }) {
           value={value}
           // e.target.value is whatever is currently typed in the box.
           onChange={(e) => onChange(e.target.value)}
-          placeholder="Try 'Tadasana', 'balance' or 'backbend'..."
-          className="w-full rounded-full border border-stone-300 bg-white py-3 pl-11 pr-4 text-stone-900 shadow-sm outline-none transition placeholder:text-stone-400 focus:border-amber-600 focus:ring-2 focus:ring-amber-600/20"
+          placeholder="Try 'tadasana', 'mountain' or 'balance'..."
+          // pr-28 leaves room for the button sitting on top of the input.
+          className="w-full rounded-full border border-stone-300 bg-white py-3 pl-11 pr-28 text-stone-900 shadow-sm outline-none transition placeholder:text-stone-400 focus:border-amber-600 focus:ring-2 focus:ring-amber-600/20"
         />
+
+        {/* type="submit" is what connects this button to the form's onSubmit */}
+        <button
+          type="submit"
+          disabled={loading}
+          className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded-full bg-amber-700 px-5 py-2 text-sm font-medium text-white transition hover:bg-amber-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-600 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {loading ? "..." : "Search"}
+        </button>
       </div>
-    </div>
+    </form>
   );
 }

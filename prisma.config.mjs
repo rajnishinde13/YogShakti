@@ -23,7 +23,23 @@ export default defineConfig({
   },
 
   datasource: {
+    // Which database the Prisma CLI talks to (migrate, seed, studio).
     // Read from .env, which is git-ignored and never committed.
-    url: process.env.DATABASE_URL,
+    //
+    // DIRECT_URL is optional and only matters with hosted PostgreSQL.
+    // Providers like Neon and Supabase give you two connection strings:
+    //
+    //   pooled  -> for the running app. Serverless functions open a new
+    //              connection per request, and the pooler keeps the database
+    //              from running out of them. This goes in DATABASE_URL.
+    //   direct  -> a plain connection with no pooler in between.
+    //
+    // Migrations MUST use the direct one. `prisma migrate` takes an advisory
+    // lock so two deploys cannot migrate at once, and transaction-mode poolers
+    // do not support those locks — the migration hangs or fails.
+    //
+    // Locally there is no pooler, DIRECT_URL is unset, and this falls back
+    // to DATABASE_URL. Nothing changes for local development.
+    url: process.env.DIRECT_URL ?? process.env.DATABASE_URL,
   },
 });

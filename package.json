@@ -8,9 +8,15 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "postinstall": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:deploy": "prisma migrate deploy",
     "db:seed": "prisma db seed",
     "db:verify": "node prisma/verify.js",
     "db:studio": "prisma studio"
+  },
+  "engines": {
+    "node": ">=20"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.9.1",

@@ -11,15 +11,20 @@ one phase at a time.
 
 ---
 
-## Current status — Phase 4 ✅
+## Current status — Phase 5 ✅
 
 **Phase 1** built the frontend. **Phase 2** added PostgreSQL and Prisma.
 **Phase 3** connected them. **Phase 4** added a page per pose.
+**Phase 5** made the search real.
 
 **What works right now**
 
 - Homepage fetches asanas from PostgreSQL on every request
-- Search filters as you type (`useState` + `.filter()`)
+- Real search API at `GET /api/search?q=...`, querying PostgreSQL
+- Search matches name, English name, category, level, description **and
+  benefits** — case-insensitively
+- Search runs on Enter or the Search button, not on every keystroke
+- Loading, error, empty and results states all handled
 - Every card links to a detail page at `/asana/<slug>`
 - Unknown slugs return a real HTTP 404 with a friendly page
 - Graceful screens for "database unreachable" and "database empty"
@@ -43,13 +48,14 @@ client component's code is downloaded by every visitor.
 
 ---
 
-## Getting started
+## Local setup
 
-**You need:** [Node.js](https://nodejs.org) 18+ and
+**You need:** [Node.js](https://nodejs.org) 20+ and
 [PostgreSQL](https://www.postgresql.org/) running locally.
 
 ```bash
 # 1. install dependencies
+#    (this also runs `prisma generate` via the postinstall script)
 npm install
 
 # 2. create the database (Prisma will not create it for you)
@@ -59,8 +65,8 @@ createdb yogshakti
 cp .env.example .env
 #    then edit .env and put your real DATABASE_URL in it
 
-# 4. create the table and load the sample data
-npx prisma migrate dev
+# 4. create the tables and load the sample data
+npm run db:migrate
 npm run db:seed
 
 # 5. start the development server
@@ -73,6 +79,93 @@ Check the database is working at any time with `npm run db:verify`.
 
 ---
 
+## Environment variables
+
+| Variable       | Required             | Used by            | What it is                                    |
+| -------------- | -------------------- | ------------------ | --------------------------------------------- |
+| `DATABASE_URL` | **Yes**              | The app + the CLI  | Connection string. In production, the **pooled** one. |
+| `DIRECT_URL`   | Production only      | The Prisma CLI     | **Non-pooled** connection, used for migrations. |
+
+Both are read from the environment only — no connection string is ever
+hardcoded in application code. Locally they come from `.env` (git-ignored);
+on Vercel they come from the project's Environment Variables settings.
+
+**Why two URLs in production.** Hosted providers give you a pooled and a direct
+connection string. The running app needs the **pooled** one, because each
+serverless request opens its own connection and the database would otherwise
+run out. But `prisma migrate` takes a PostgreSQL advisory lock so two deploys
+cannot migrate simultaneously, and transaction-mode poolers do not support
+those locks — so migrations need the **direct** one.
+
+Locally there is no pooler. Leave `DIRECT_URL` unset and it falls back to
+`DATABASE_URL` automatically (see `prisma.config.mjs`).
+
+---
+
+## Deploying to Vercel
+
+### Production database
+
+Any hosted PostgreSQL works — [Neon](https://neon.tech),
+[Supabase](https://supabase.com), Railway, or Vercel Postgres. Nothing in the
+app is provider-specific; it is PostgreSQL through Prisma either way.
+
+1. Create a PostgreSQL database with your provider.
+2. Copy **both** connection strings — pooled and direct. On Neon the pooled
+   host contains `-pooler`; the direct host is the same without it.
+
+### Run the migrations against it
+
+Migrations are **not** run automatically by the build. Run them once from your
+machine, pointing at the production database:
+
+```bash
+DATABASE_URL="<direct-connection-string>" npm run db:deploy
+DATABASE_URL="<direct-connection-string>" npm run db:seed
+```
+
+`db:deploy` runs `prisma migrate deploy`, which only applies migrations that
+have not run yet. Unlike `migrate dev` it never resets or drops anything, which
+is why it is the correct command for a real database.
+
+### Deploy
+
+1. Push to GitHub.
+2. Import the repository at [vercel.com/new](https://vercel.com/new). The
+   framework is detected automatically — no build settings to change.
+3. Add the environment variables **before** the first deploy:
+   - `DATABASE_URL` → the **pooled** connection string
+   - `DIRECT_URL` → the **direct** connection string
+4. Deploy.
+
+### Why `postinstall` matters
+
+```json
+"postinstall": "prisma generate"
+```
+
+Vercel installs dependencies into a clean `node_modules` on every build.
+`@prisma/client` ships **without** a generated client and does not generate one
+on install, so without this script the build fails with:
+
+```
+Error: Cannot find module '.prisma/client/default'
+```
+
+`postinstall` runs after every `npm install`, locally and on Vercel, so the
+client is always generated before the build starts.
+
+### If a deploy goes wrong
+
+| Symptom | Cause |
+| --- | --- |
+| Build fails: `Cannot find module '.prisma/client/default'` | `postinstall` script missing |
+| Site loads but shows "Could not reach the database" | `DATABASE_URL` not set in Vercel, or wrong |
+| Pages load but every asana list is empty | Migrations ran but the seed did not |
+| Migration command hangs and never finishes | Migrating through the pooled URL — use the direct one |
+
+---
+
 ## Project structure
 
 ```
@@ -81,6 +174,9 @@ YogShakti/
 │   ├── layout.js        # wraps every page — Header, Footer, fonts, <head>
 │   ├── page.js          # SERVER component — queries Prisma, passes props down
 │   ├── globals.css      # imports Tailwind
+│   ├── api/
+│   │   └── search/
+│   │       └── route.js # GET /api/search?q=... — returns JSON, not HTML
 │   └── asana/
 │       └── [slug]/      # square brackets = a DYNAMIC route
 │           ├── page.js       # one asana, looked up by slug
@@ -136,13 +232,16 @@ belongs in their closest shared parent.
 
 | Command             | What it does                                     |
 | ------------------- | ------------------------------------------------ |
-| `npm run dev`       | Start the dev server on port 3000                |
-| `npm run build`     | Build the production bundle                      |
-| `npm start`         | Run the production build (after `build`)         |
-| `npm run lint`      | Check the code with ESLint                       |
-| `npm run db:seed`   | Load the sample asanas into PostgreSQL           |
-| `npm run db:verify` | Read the asanas back — proves the DB works       |
-| `npm run db:studio` | Open Prisma Studio, a browser UI for your tables |
+| `npm run dev`        | Start the dev server on port 3000                |
+| `npm run build`      | Build the production bundle                      |
+| `npm start`          | Run the production build (after `build`)         |
+| `npm run lint`       | Check the code with ESLint                       |
+| `npm run postinstall`| Generate the Prisma client (runs automatically)  |
+| `npm run db:migrate` | **Dev only** — create + apply a migration        |
+| `npm run db:deploy`  | **Production** — apply existing migrations only  |
+| `npm run db:seed`    | Load the sample asanas into PostgreSQL           |
+| `npm run db:verify`  | Read the asanas back — proves the DB works       |
+| `npm run db:studio`  | Open Prisma Studio, a browser UI for your tables |
 
 ### Prisma commands worth knowing
 
@@ -200,18 +299,51 @@ the file extension (`"../lib/prisma.js"`, not `"../lib/prisma"`).
 - [x] **Phase 2** — PostgreSQL + Prisma: schema, migration, seed, verification
 - [x] **Phase 3** — Homepage reads asanas from the database
 - [x] **Phase 4** — Detail page per pose at `/asana/<slug>`
-- [ ] **Phase 5** — Move search into SQL: filters by level, category and benefit
+- [x] **Phase 5** — Real search API backed by PostgreSQL
 - [ ] **Phase 6** — Fill in the "coming soon" fields: steps, breathing, cautions
 - [ ] **Phase 7** — Images and illustrations for each pose
+
+### Known limits of the current search
+
+- **Multi-word phrases are matched literally.** `"downward facing"` finds
+  nothing, because the stored value is `Downward-Facing Dog` with a hyphen.
+  Splitting the query into words is a future improvement.
+- **No ranking.** Results come back in `id` order, so a match on the pose name
+  is not treated as more important than a match deep in a description.
+- **No index on the search.** `ILIKE '%...%'` cannot use a normal B-tree index,
+  so PostgreSQL scans every row. Fine for six poses; worth revisiting (with
+  `pg_trgm` or full-text search) at a few thousand.
 
 ---
 
 ## Routes
 
-| Address            | File                        | Query                            |
-| ------------------ | --------------------------- | -------------------------------- |
-| `/`                | `app/page.js`               | `findMany()` — all poses         |
-| `/asana/<slug>`    | `app/asana/[slug]/page.js`  | `findUnique()` — one pose        |
+| Address              | File                        | Query                       |
+| -------------------- | --------------------------- | --------------------------- |
+| `/`                  | `app/page.js`               | `findMany()` — all poses    |
+| `/asana/<slug>`      | `app/asana/[slug]/page.js`  | `findUnique()` — one pose   |
+| `/api/search?q=...`  | `app/api/search/route.js`   | `$queryRaw` — ILIKE search  |
+
+### Why the search uses raw SQL
+
+Five of the six searchable fields are ordinary text columns and could have
+used Prisma's query builder:
+
+```js
+where: { OR: [ { name: { contains: query, mode: "insensitive" } }, ... ] }
+```
+
+The sixth, `benefits`, is a PostgreSQL `text[]` array. Prisma's array filters
+(`has`, `hasSome`) only test elements for **exact, case-sensitive** equality,
+so they cannot find `"balance"` inside the benefit `"Improves balance"`.
+
+`array_to_string(benefits, ' ') ILIKE '%balance%'` flattens the array into one
+string so `ILIKE` can scan it. That single requirement is why the endpoint uses
+`prisma.$queryRaw` for the whole query instead of the builder.
+
+`$queryRaw` is a **tagged template**, so values are sent to PostgreSQL as
+separate parameters — SQL injection is not possible. Building the same string
+with `+` would be dangerous.
 
 ### findMany() vs findUnique()
 
