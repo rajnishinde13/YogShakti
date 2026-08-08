@@ -36,3 +36,6 @@ yarn-error.log*
 
 # vercel
 .vercel
+
+# prisma — the generated client is rebuilt by `prisma generate`, never committed
+/generated

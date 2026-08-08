@@ -11,40 +11,51 @@ one phase at a time.
 
 ---
 
-## Current status — Phase 1 ✅
+## Current status — Phase 2 ✅
 
-Phase 1 is the **frontend foundation**. Everything on screen runs from a static
-JavaScript array. There is no database, no login and no API yet — that is
-deliberate.
+**Phase 1** built the frontend foundation. **Phase 2** put PostgreSQL and
+Prisma behind it.
+
+The database now holds the six asanas and Prisma can read them back. The
+webpage does **not** query the database yet — it still renders from
+`data/asanas.js`. Connecting the two is Phase 3.
 
 **What works right now**
 
-- Responsive homepage
-- Header with YogShakti branding
-- Hero section
-- Search bar that filters as you type (`useState`)
-- 6 asana cards rendered from an array with `.map()`
-- Empty state when nothing matches
-- Footer
+- Responsive homepage: header, hero, search bar, asana cards, footer
+- Search filters as you type (`useState` + `.filter()`)
+- PostgreSQL database `yogshakti` with an `Asana` table
+- Prisma schema, a checked-in migration, and a re-runnable seed script
 
 ---
 
 ## Getting started
 
-**You need:** [Node.js](https://nodejs.org) 18 or newer.
+**You need:** [Node.js](https://nodejs.org) 18+ and
+[PostgreSQL](https://www.postgresql.org/) running locally.
 
 ```bash
-# 1. install dependencies (only needed the first time)
+# 1. install dependencies
 npm install
 
-# 2. start the development server
+# 2. create the database (Prisma will not create it for you)
+createdb yogshakti
+
+# 3. set up your environment file
+cp .env.example .env
+#    then edit .env and put your real DATABASE_URL in it
+
+# 4. create the table and load the sample data
+npx prisma migrate dev
+npm run db:seed
+
+# 5. start the development server
 npm run dev
 ```
 
 Then open **[http://localhost:3000](http://localhost:3000)**.
 
-Edit any file in `components/` and save — the page updates in the browser
-instantly. No environment variables are required for Phase 1.
+Check the database is working at any time with `npm run db:verify`.
 
 ---
 
@@ -65,11 +76,22 @@ YogShakti/
 │   ├── AsanaList.jsx    # renders MANY asanas via .map()
 │   └── Footer.jsx       # bottom bar
 │
+├── prisma/
+│   ├── schema.prisma    # the data model — source of truth for the database
+│   ├── migrations/      # generated SQL history, committed to Git
+│   ├── seed.js          # loads the sample asanas into PostgreSQL
+│   └── verify.js        # reads them back, to prove the connection works
+│
+├── lib/
+│   └── prisma.js        # one shared PrismaClient for the whole project
+│
 ├── data/
-│   └── asanas.js        # placeholder data (replaced by the DB in Phase 2)
+│   └── asanas.js        # static data, still used by the page (until Phase 3)
 │
 ├── public/              # static files (images, icons)
-├── .env.example         # template for future environment variables
+├── prisma.config.mjs    # Prisma CLI config — loads .env, points at the schema
+├── .env                 # real secrets — GIT IGNORED, never commit
+├── .env.example         # safe template — committed
 └── package.json
 ```
 
@@ -93,37 +115,74 @@ belongs in their closest shared parent.
 
 ## Scripts
 
-| Command         | What it does                              |
-| --------------- | ----------------------------------------- |
-| `npm run dev`   | Start the dev server on port 3000         |
-| `npm run build` | Build the production bundle               |
-| `npm start`     | Run the production build (after `build`)  |
-| `npm run lint`  | Check the code with ESLint                |
+| Command             | What it does                                     |
+| ------------------- | ------------------------------------------------ |
+| `npm run dev`       | Start the dev server on port 3000                |
+| `npm run build`     | Build the production bundle                      |
+| `npm start`         | Run the production build (after `build`)         |
+| `npm run lint`      | Check the code with ESLint                       |
+| `npm run db:seed`   | Load the sample asanas into PostgreSQL           |
+| `npm run db:verify` | Read the asanas back — proves the DB works       |
+| `npm run db:studio` | Open Prisma Studio, a browser UI for your tables |
+
+### Prisma commands worth knowing
+
+| Command                       | What it does                                             |
+| ----------------------------- | -------------------------------------------------------- |
+| `npx prisma migrate dev`      | Create + apply a migration after editing the schema      |
+| `npx prisma migrate deploy`   | Apply existing migrations — the safe one for production  |
+| `npx prisma generate`         | Rebuild the client after a schema change                 |
+| `npx prisma validate`         | Check the schema for errors without touching the DB      |
+
+> `migrate dev` is **development only** — it can drop and recreate tables when
+> things drift. Never point it at a production database.
 
 ---
 
 ## Tech stack
 
-| Layer      | Choice                        |
-| ---------- | ----------------------------- |
-| Framework  | Next.js (App Router)          |
+| Layer      | Choice                          |
+| ---------- | ------------------------------- |
+| Framework  | Next.js 16 (App Router)         |
 | Language   | JavaScript (**not** TypeScript) |
-| UI         | React function components     |
-| Styling    | Tailwind CSS v4               |
-| Database   | PostgreSQL + Prisma *(Phase 2)* |
+| UI         | React function components       |
+| Styling    | Tailwind CSS v4                 |
+| Database   | PostgreSQL 14                   |
+| ORM        | Prisma 7 + `@prisma/adapter-pg` |
 
-> Tailwind v4 has no `tailwind.config.js`. Configuration lives in
-> `app/globals.css` instead.
+### Version gotchas
+
+Both Tailwind and Prisma changed a lot recently, so most tutorials you find
+online describe the older versions. The differences that bite:
+
+**Tailwind v4** — there is no `tailwind.config.js`. Configuration lives in
+`app/globals.css`.
+
+**Prisma 7** — three changes from v5/v6:
+
+1. **`.env` is not loaded automatically.** `prisma.config.mjs` has to
+   `import "dotenv/config"` or `DATABASE_URL` comes back `undefined`.
+2. **A driver adapter is required.** The old bundled Rust engine is gone, so
+   `new PrismaClient()` on its own throws. You pass `{ adapter }` built from
+   `@prisma/adapter-pg`. See `lib/prisma.js`.
+3. **The default generator emits TypeScript.** This project sets
+   `provider = "prisma-client-js"` in the schema to get plain JavaScript.
+
+**This project is ESM.** `package.json` has `"type": "module"`, so every `.js`
+file uses `import`/`export` — the same syntax as the React components, no
+`require()` anywhere. One consequence: relative imports in Node scripts need
+the file extension (`"../lib/prisma.js"`, not `"../lib/prisma"`).
 
 ---
 
 ## Roadmap
 
 - [x] **Phase 1** — Frontend foundation: layout, search UI, static asana cards
-- [ ] **Phase 2** — PostgreSQL + Prisma; move asanas into the database
-- [ ] **Phase 3** — Individual asana detail pages
-- [ ] **Phase 4** — Real search: filters by level, category and benefit
-- [ ] **Phase 5** — Images and illustrations for each pose
+- [x] **Phase 2** — PostgreSQL + Prisma: schema, migration, seed, verification
+- [ ] **Phase 3** — Read asanas from the database instead of `data/asanas.js`
+- [ ] **Phase 4** — Individual asana detail pages
+- [ ] **Phase 5** — Real search: filters by level, category and benefit
+- [ ] **Phase 6** — Images and illustrations for each pose
 
 ---
 

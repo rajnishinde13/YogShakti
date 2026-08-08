@@ -1,0 +1,44 @@
+// schema.prisma
+//
+// This file is the single source of truth for the database structure.
+// You describe the shape you want here, then `prisma migrate dev` figures
+// out the SQL needed to make the real database match it.
+
+// The generator decides what client code Prisma writes for you.
+//
+// "prisma-client-js" emits plain JavaScript. Prisma 7's newer default,
+// "prisma-client", emits TypeScript instead — which this project does not use.
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  // The connection string comes from prisma.config.mjs, which reads .env.
+}
+
+// One yoga pose. Mirrors the objects currently in data/asanas.js.
+model Asana {
+  // @id marks the primary key. autoincrement() lets Postgres number rows.
+  id Int @id @default(autoincrement())
+
+  // @unique stops the same pose being inserted twice, which also lets the
+  // seed script safely re-run using upsert().
+  name        String @unique
+  englishName String
+  level       String
+  category    String
+  emoji       String
+
+  // @db.Text asks Postgres for an unlimited-length text column instead of
+  // the default varchar, since descriptions can get long.
+  description String @db.Text
+
+  // String[] becomes a real PostgreSQL text array — a Postgres feature that
+  // most other databases do not have.
+  benefits String[]
+
+  // Bookkeeping columns. Prisma fills both in automatically.
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
