@@ -11,18 +11,20 @@ one phase at a time.
 
 ---
 
-## Current status — Phase 3 ✅
+## Current status — Phase 4 ✅
 
 **Phase 1** built the frontend. **Phase 2** added PostgreSQL and Prisma.
-**Phase 3** connected them — the homepage now reads real database rows.
+**Phase 3** connected them. **Phase 4** added a page per pose.
 
 **What works right now**
 
 - Homepage fetches asanas from PostgreSQL on every request
 - Search filters as you type (`useState` + `.filter()`)
+- Every card links to a detail page at `/asana/<slug>`
+- Unknown slugs return a real HTTP 404 with a friendly page
 - Graceful screens for "database unreachable" and "database empty"
 - PostgreSQL database `yogshakti` with an `Asana` table
-- Prisma schema, a checked-in migration, and a re-runnable seed script
+- Prisma schema, two checked-in migrations, a re-runnable seed script
 
 ### How data flows
 
@@ -78,7 +80,11 @@ YogShakti/
 ├── app/
 │   ├── layout.js        # wraps every page — Header, Footer, fonts, <head>
 │   ├── page.js          # SERVER component — queries Prisma, passes props down
-│   └── globals.css      # imports Tailwind
+│   ├── globals.css      # imports Tailwind
+│   └── asana/
+│       └── [slug]/      # square brackets = a DYNAMIC route
+│           ├── page.js       # one asana, looked up by slug
+│           └── not-found.js  # shown when the slug matches nothing
 │
 ├── components/          # reusable UI pieces
 │   ├── Header.jsx       # top bar + branding
@@ -193,9 +199,32 @@ the file extension (`"../lib/prisma.js"`, not `"../lib/prisma"`).
 - [x] **Phase 1** — Frontend foundation: layout, search UI, static asana cards
 - [x] **Phase 2** — PostgreSQL + Prisma: schema, migration, seed, verification
 - [x] **Phase 3** — Homepage reads asanas from the database
-- [ ] **Phase 4** — Individual asana detail pages
+- [x] **Phase 4** — Detail page per pose at `/asana/<slug>`
 - [ ] **Phase 5** — Move search into SQL: filters by level, category and benefit
-- [ ] **Phase 6** — Images and illustrations for each pose
+- [ ] **Phase 6** — Fill in the "coming soon" fields: steps, breathing, cautions
+- [ ] **Phase 7** — Images and illustrations for each pose
+
+---
+
+## Routes
+
+| Address            | File                        | Query                            |
+| ------------------ | --------------------------- | -------------------------------- |
+| `/`                | `app/page.js`               | `findMany()` — all poses         |
+| `/asana/<slug>`    | `app/asana/[slug]/page.js`  | `findUnique()` — one pose        |
+
+### findMany() vs findUnique()
+
+| | `findMany()` | `findUnique()` |
+| --- | --- | --- |
+| Returns | An **array** (`[]` if nothing matches) | **One object**, or `null` |
+| `where` accepts | Any column | Only `@unique` / `@id` columns |
+| Used by | The homepage | The detail page |
+
+`findUnique()` is restricted to unique columns on purpose — the database can
+guarantee at most one row comes back, so Prisma never has to decide which of
+several matches to return. That restriction is exactly why `slug` is marked
+`@unique` in `schema.prisma`.
 
 ---
 

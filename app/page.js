@@ -33,6 +33,8 @@ async function getAsanas() {
       // The field names below match exactly what AsanaCard reads.
       select: {
         id: true,
+        // slug is what AsanaCard uses to build its link: /asana/tadasana
+        slug: true,
         name: true,
         englishName: true,
         level: true,

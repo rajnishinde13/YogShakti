@@ -13,6 +13,8 @@
 const asanas = [
   {
     id: 1,
+    // slug = the URL for this pose: /asana/tadasana
+    slug: "tadasana",
     name: "Tadasana",
     englishName: "Mountain Pose",
     level: "Beginner",
@@ -24,6 +26,7 @@ const asanas = [
   },
   {
     id: 2,
+    slug: "vrikshasana",
     name: "Vrikshasana",
     englishName: "Tree Pose",
     level: "Beginner",
@@ -35,6 +38,7 @@ const asanas = [
   },
   {
     id: 3,
+    slug: "bhujangasana",
     name: "Bhujangasana",
     englishName: "Cobra Pose",
     level: "Beginner",
@@ -46,6 +50,7 @@ const asanas = [
   },
   {
     id: 4,
+    slug: "balasana",
     name: "Balasana",
     englishName: "Child's Pose",
     level: "Beginner",
@@ -57,6 +62,7 @@ const asanas = [
   },
   {
     id: 5,
+    slug: "adho-mukha-svanasana",
     name: "Adho Mukha Svanasana",
     englishName: "Downward-Facing Dog",
     level: "Intermediate",
@@ -68,6 +74,7 @@ const asanas = [
   },
   {
     id: 6,
+    slug: "trikonasana",
     name: "Trikonasana",
     englishName: "Triangle Pose",
     level: "Intermediate",

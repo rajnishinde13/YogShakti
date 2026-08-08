@@ -22,6 +22,14 @@ model Asana {
   // @id marks the primary key. autoincrement() lets Postgres number rows.
   id Int @id @default(autoincrement())
 
+  // The URL-friendly version of the name: "Adho Mukha Svanasana" becomes
+  // "adho-mukha-svanasana", giving the address /asana/adho-mukha-svanasana.
+  //
+  // @unique does two jobs here. It stops two poses claiming the same address,
+  // and it is what lets findUnique() look a pose up by slug — Prisma only
+  // allows findUnique() on columns the database guarantees are unique.
+  slug String @unique
+
   // @unique stops the same pose being inserted twice, which also lets the
   // seed script safely re-run using upsert().
   name        String @unique
