@@ -26,11 +26,16 @@ async function getAsanas() {
       // ORDER BY id ASC — keeps the cards in the same order as before.
       orderBy: { id: "asc" },
 
-      // select = fetch only these columns. Two reasons to be explicit:
+      // select = fetch only these columns. Three reasons to be explicit:
       //   1. We do not need createdAt / updatedAt in the UI.
       //   2. Those two are Date objects, and everything handed to a client
       //      component has to be sent over the network as plain data.
-      // The field names below match exactly what AsanaCard reads.
+      //   3. The long detail fields (steps, precautions and so on) belong to
+      //      the detail page. Sending them for all 26 poses would bloat every
+      //      homepage response for content nobody sees here.
+      //
+      // The field names below match exactly what AsanaCard reads, and the
+      // search API returns this same shape so the two are interchangeable.
       select: {
         id: true,
         // slug is what AsanaCard uses to build its link: /asana/tadasana
@@ -39,9 +44,9 @@ async function getAsanas() {
         englishName: true,
         level: true,
         category: true,
-        emoji: true,
         description: true,
-        benefits: true,
+        // Null for every pose today; the card draws a placeholder instead.
+        imageUrl: true,
       },
     });
 

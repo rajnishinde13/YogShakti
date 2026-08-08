@@ -36,7 +36,6 @@ model Asana {
   englishName String
   level       String
   category    String
-  emoji       String
 
   // @db.Text asks Postgres for an unlimited-length text column instead of
   // the default varchar, since descriptions can get long.
@@ -45,6 +44,34 @@ model Asana {
   // String[] becomes a real PostgreSQL text array — a Postgres feature that
   // most other databases do not have.
   benefits String[]
+
+  // ---- Detail content ----------------------------------------------------
+  //
+  // Six lists and two pieces of prose. Lists are arrays because the UI renders
+  // each entry as its own bullet; breathing and duration are single strings
+  // because splitting them into items would be artificial.
+
+  steps             String[] // ordered instructions, 4-8 of them
+  bodyAreas         String[] // muscles and joints involved
+  commonMistakes    String[]
+  beginnerTips      String[]
+  precautions       String[]
+  contraindications String[]
+
+  breathing String @db.Text // when to inhale and exhale
+  duration  String // e.g. "30-60 seconds each side"
+
+  // ---- Visuals -----------------------------------------------------------
+
+  // Reserved for a real photograph or illustration. Nullable, because no pose
+  // has one yet — the UI draws a placeholder whenever this is empty. Adding
+  // images later needs no migration, just values in this column.
+  imageUrl String?
+
+  // Kept for now but NO LONGER USED by the UI, which draws an abstract mark
+  // instead. Optional so new poses need not supply one. Safe to drop in a
+  // later migration once you are happy with the new visuals.
+  emoji String?
 
   // Bookkeeping columns. Prisma fills both in automatically.
   createdAt DateTime @default(now())

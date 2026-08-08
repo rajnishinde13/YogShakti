@@ -15,6 +15,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { prisma } from "@/lib/prisma";
+import AsanaVisual from "@/components/AsanaVisual";
 
 // Query the database on every request, so edits in PostgreSQL show up
 // on the next refresh instead of being frozen at build time.
@@ -33,7 +34,8 @@ async function getAsana(slug) {
       // which is exactly what makes this line legal.
       where: { slug },
 
-      // Fetch only the columns the page displays.
+      // Everything the page displays. Left out on purpose: createdAt and
+      // updatedAt, which are Date objects the page has no use for.
       select: {
         id: true,
         slug: true,
@@ -41,9 +43,17 @@ async function getAsana(slug) {
         englishName: true,
         level: true,
         category: true,
-        emoji: true,
         description: true,
         benefits: true,
+        steps: true,
+        breathing: true,
+        duration: true,
+        bodyAreas: true,
+        commonMistakes: true,
+        beginnerTips: true,
+        precautions: true,
+        contraindications: true,
+        imageUrl: true,
       },
     });
 
@@ -114,13 +124,14 @@ export default async function AsanaDetailPage({ params }) {
         ← All asanas
       </Link>
 
-      {/* ---- Title block ---- */}
-      <header className="mt-6 border-b border-stone-200 pb-8">
-        <span className="text-5xl" aria-hidden="true">
-          {asana.emoji}
-        </span>
+      {/* ---- Visual ---- */}
+      <div className="mt-6">
+        <AsanaVisual asana={asana} variant="detail" />
+      </div>
 
-        <h1 className="mt-4 text-3xl font-bold tracking-tight text-stone-900 sm:text-4xl">
+      {/* ---- Title block ---- */}
+      <header className="mt-8 border-b border-stone-200 pb-8">
+        <h1 className="text-3xl font-bold tracking-tight text-stone-900 sm:text-4xl">
           {asana.name}
         </h1>
         <p className="mt-1 text-lg text-stone-500">{asana.englishName}</p>
@@ -135,55 +146,108 @@ export default async function AsanaDetailPage({ params }) {
         </div>
       </header>
 
-      {/* ---- Description ---- */}
+      {/* ---- About ---- */}
       <Section title="About this pose">
         <p className="leading-relaxed text-stone-700">{asana.description}</p>
       </Section>
 
       {/* ---- Benefits ---- */}
       <Section title="Benefits">
-        <ul className="space-y-2">
-          {asana.benefits.map((benefit) => (
-            <li key={benefit} className="flex gap-3 text-stone-700">
-              <span className="text-amber-600" aria-hidden="true">
-                ✓
+        <TickList items={asana.benefits} />
+      </Section>
+
+      {/* ---- Steps: an ORDERED list, because sequence matters here ---- */}
+      <Section title="How to practise">
+        <ol className="space-y-3">
+          {asana.steps.map((step, index) => (
+            <li key={step} className="flex gap-4">
+              {/* index comes from map()'s second argument. It starts at 0,
+                  so +1 turns it into a human step number. */}
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-amber-50 text-xs font-semibold text-amber-800">
+                {index + 1}
               </span>
-              <span>{benefit}</span>
+              <span className="pt-0.5 leading-relaxed text-stone-700">
+                {step}
+              </span>
+            </li>
+          ))}
+        </ol>
+      </Section>
+
+      {/* ---- Breathing and duration, side by side ---- */}
+      <div className="mt-8 grid gap-4 sm:grid-cols-2">
+        <InfoCard title="Breathing">
+          <p className="leading-relaxed text-stone-700">{asana.breathing}</p>
+        </InfoCard>
+
+        <InfoCard title="How long to hold">
+          <p className="leading-relaxed text-stone-700">{asana.duration}</p>
+        </InfoCard>
+      </div>
+
+      {/* ---- Body areas, as chips ---- */}
+      <Section title="Body areas">
+        <ul className="flex flex-wrap gap-2">
+          {asana.bodyAreas.map((area) => (
+            <li
+              key={area}
+              className="rounded-full border border-stone-200 bg-white px-3 py-1.5 text-sm text-stone-600"
+            >
+              {area}
             </li>
           ))}
         </ul>
       </Section>
 
-      {/* ---- Space reserved for future fields ----
-          These sections are laid out now so the page shape is settled, but
-          none of them have database columns yet. Adding a column later means
-          swapping one <ComingSoon /> for real content — no redesign. */}
-      <div className="mt-4 border-t border-stone-200 pt-8">
-        <h2 className="text-sm font-semibold uppercase tracking-widest text-stone-400">
-          Coming soon
+      {/* ---- Mistakes and tips, side by side ---- */}
+      <div className="mt-8 grid gap-4 sm:grid-cols-2">
+        <InfoCard title="Common mistakes">
+          <BulletList items={asana.commonMistakes} marker="·" />
+        </InfoCard>
+
+        <InfoCard title="Beginner tips">
+          <BulletList items={asana.beginnerTips} marker="·" />
+        </InfoCard>
+      </div>
+
+      {/* ---- Safety. Set apart visually, because it matters most. ---- */}
+      <div className="mt-10 rounded-2xl border border-amber-200 bg-amber-50/50 p-6">
+        <h2 className="text-sm font-semibold uppercase tracking-widest text-amber-800">
+          Practise safely
         </h2>
 
-        <div className="mt-6 grid gap-4 sm:grid-cols-2">
-          <ComingSoon title="How to practise" note="Step-by-step instructions" />
-          <ComingSoon title="Breathing" note="When to inhale and exhale" />
-          <ComingSoon title="How long to hold" note="Suggested duration" />
-          <ComingSoon title="Body areas" note="Muscles and joints involved" />
-          <ComingSoon title="Common mistakes" note="What to watch out for" />
-          <ComingSoon title="Beginner tips" note="Props and easier variations" />
-          <ComingSoon title="Precautions" note="Practise with care if..." />
-          <ComingSoon title="Contraindications" note="When to avoid this pose" />
+        <div className="mt-5 grid gap-6 sm:grid-cols-2">
+          <div>
+            <h3 className="mb-2 text-sm font-semibold text-stone-900">
+              Precautions
+            </h3>
+            <BulletList items={asana.precautions} marker="·" />
+          </div>
+
+          <div>
+            <h3 className="mb-2 text-sm font-semibold text-stone-900">
+              Avoid or seek guidance
+            </h3>
+            <BulletList items={asana.contraindications} marker="·" />
+          </div>
         </div>
       </div>
 
-      <p className="mt-10 border-t border-stone-200 pt-6 text-xs text-stone-500">
-        For learning and general information only — not medical advice.
+      <p className="mt-10 border-t border-stone-200 pt-6 text-xs leading-relaxed text-stone-500">
+        For learning and general information only — not medical advice. If you
+        are pregnant, recovering from injury or managing a health condition,
+        speak to a qualified teacher or doctor before practising.
       </p>
     </main>
   );
 }
 
-// A small helper component, used a few times above. Defining it in the same
-// file is fine while it is only needed here.
+// ---------------------------------------------------------------------------
+// Small helper components. They live in this file because nothing else uses
+// them yet. If another page needs one, that is the moment to move it into
+// components/ — not before.
+// ---------------------------------------------------------------------------
+
 function Section({ title, children }) {
   return (
     <section className="mt-8">
@@ -193,12 +257,43 @@ function Section({ title, children }) {
   );
 }
 
-// Placeholder card for a field the database does not store yet.
-function ComingSoon({ title, note }) {
+function InfoCard({ title, children }) {
   return (
-    <div className="rounded-xl border border-dashed border-stone-300 bg-stone-50 p-4">
-      <p className="text-sm font-medium text-stone-700">{title}</p>
-      <p className="mt-1 text-xs text-stone-500">{note}</p>
+    <div className="rounded-xl border border-stone-200 bg-white p-5">
+      <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-stone-500">
+        {title}
+      </h3>
+      {children}
     </div>
+  );
+}
+
+function TickList({ items }) {
+  return (
+    <ul className="space-y-2">
+      {items.map((item) => (
+        <li key={item} className="flex gap-3 text-stone-700">
+          <span className="text-amber-600" aria-hidden="true">
+            ✓
+          </span>
+          <span className="leading-relaxed">{item}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function BulletList({ items, marker }) {
+  return (
+    <ul className="space-y-2">
+      {items.map((item) => (
+        <li key={item} className="flex gap-2.5 text-sm text-stone-700">
+          <span className="text-stone-400" aria-hidden="true">
+            {marker}
+          </span>
+          <span className="leading-relaxed">{item}</span>
+        </li>
+      ))}
+    </ul>
   );
 }

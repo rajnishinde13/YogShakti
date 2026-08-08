@@ -68,9 +68,18 @@ export async function GET(request) {
     // sends `pattern` to PostgreSQL as a separate parameter, so a visitor
     // typing SQL into the search box cannot alter the query. Building the
     // same string with `+` would be a SQL-injection hole.
+    // The SELECT list matches the homepage query in app/page.js exactly, so
+    // AsanaCard can render either without caring which one produced the row.
+    // The long detail fields are not returned here — they belong to the
+    // detail page.
+    //
+    // The WHERE clause searches six fields. Deliberately NOT searched: steps,
+    // precautions, contraindications and the other long-form content. They
+    // would match almost any common word ("knee", "breathe") and drown the
+    // results that actually matter.
     const results = await prisma.$queryRaw`
-      SELECT id, slug, name, "englishName", level, category, emoji,
-             description, benefits
+      SELECT id, slug, name, "englishName", level, category,
+             description, "imageUrl"
       FROM "Asana"
       WHERE name                            ILIKE ${pattern}
          OR "englishName"                   ILIKE ${pattern}

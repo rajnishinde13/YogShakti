@@ -11,25 +11,70 @@ one phase at a time.
 
 ---
 
-## Current status — Phase 5 ✅
+## Current status — Phase 6 ✅
 
 **Phase 1** built the frontend. **Phase 2** added PostgreSQL and Prisma.
 **Phase 3** connected them. **Phase 4** added a page per pose.
-**Phase 5** made the search real.
+**Phase 5** made the search real. **Phase 6** filled in the content:
+**26 asanas**, each with complete structured detail.
 
 **What works right now**
 
-- Homepage fetches asanas from PostgreSQL on every request
-- Real search API at `GET /api/search?q=...`, querying PostgreSQL
+- 26 asanas in PostgreSQL, every one with full detail content
+- Homepage fetches from PostgreSQL on every request
+- Real search API at `GET /api/search?q=...`
 - Search matches name, English name, category, level, description **and
   benefits** — case-insensitively
 - Search runs on Enter or the Search button, not on every keystroke
 - Loading, error, empty and results states all handled
-- Every card links to a detail page at `/asana/<slug>`
+- Detail page per pose: steps, breathing, duration, body areas, common
+  mistakes, beginner tips, precautions and contraindications
 - Unknown slugs return a real HTTP 404 with a friendly page
 - Graceful screens for "database unreachable" and "database empty"
-- PostgreSQL database `yogshakti` with an `Asana` table
-- Prisma schema, two checked-in migrations, a re-runnable seed script
+- Prisma schema, three checked-in migrations, a re-runnable seed script
+
+### The content model
+
+| Field | Type | Notes |
+| --- | --- | --- |
+| `slug` | `String @unique` | the URL — `/asana/tadasana` |
+| `name` / `englishName` | `String` | Sanskrit and English |
+| `level` / `category` | `String` | Beginner or Intermediate; 9 categories |
+| `description` | `String @db.Text` | one or two sentences |
+| `benefits` | `String[]` | 3–5 items |
+| `steps` | `String[]` | 4–8 ordered instructions |
+| `bodyAreas` | `String[]` | muscles and joints |
+| `commonMistakes` | `String[]` | 2–4 items |
+| `beginnerTips` | `String[]` | 2–4 items |
+| `precautions` | `String[]` | general safety notes |
+| `contraindications` | `String[]` | when to avoid or seek guidance |
+| `breathing` | `String @db.Text` | prose — a list would be artificial |
+| `duration` | `String` | e.g. "30–60 seconds each side" |
+| `imageUrl` | `String?` | **reserved**, null for every pose today |
+| `emoji` | `String?` | **unused** — safe to drop in a later migration |
+
+Lists are PostgreSQL `text[]` arrays. `breathing` and `duration` are single
+strings because each is one continuous piece of guidance.
+
+### Visuals
+
+There are no emojis in the interface. `components/AsanaVisual.jsx` draws a soft
+gradient panel with an abstract three-stroke mark, tinted by category. It is
+deliberately not a drawing of the pose — it holds the space until real
+photographs exist.
+
+When `imageUrl` has a value, that component shows the image instead. Adding
+images later means filling in one column — no code change, no migration.
+
+### Content rules
+
+Anything added to `data/asanas.js` should follow these:
+
+- Benefits describe what a pose **does for the body**, never what it cures.
+  "Strengthens the legs" is fine; "cures back pain" is not.
+- Contraindications say "avoid" or "seek guidance", never "treats".
+- Concise, practical, factual, consistent in tone.
+- Nothing in this project is medical advice.
 
 ### How data flows
 
@@ -300,8 +345,9 @@ the file extension (`"../lib/prisma.js"`, not `"../lib/prisma"`).
 - [x] **Phase 3** — Homepage reads asanas from the database
 - [x] **Phase 4** — Detail page per pose at `/asana/<slug>`
 - [x] **Phase 5** — Real search API backed by PostgreSQL
-- [ ] **Phase 6** — Fill in the "coming soon" fields: steps, breathing, cautions
-- [ ] **Phase 7** — Images and illustrations for each pose
+- [x] **Phase 6** — 26 asanas with complete structured detail content
+- [ ] **Phase 7** — Real images: fill the `imageUrl` column
+- [ ] **Phase 8** — Filter by category and level alongside text search
 
 ### Known limits of the current search
 
