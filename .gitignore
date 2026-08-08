@@ -39,3 +39,5 @@ yarn-error.log*
 
 # prisma — the generated client is rebuilt by `prisma generate`, never committed
 /generated
+.claude/
+skills-lock.json
