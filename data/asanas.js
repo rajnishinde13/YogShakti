@@ -13,6 +13,17 @@
 //     "Strengthens the legs" is fine. "Cures back pain" is not.
 //   - Contraindications say "avoid" or "seek guidance", never "treats".
 //   - Nothing here is medical advice.
+//
+// SOURCE RULES — these matter more than completeness:
+//   - Never invent a classical reference. If the source of a pose is not
+//     genuinely known, leave sourceText / sourceChapter / sourceVerse unset.
+//     A blank field is honest; a plausible-looking citation is not, and
+//     invented chapter-and-verse references are the most common error in
+//     yoga reference material.
+//   - Only cite a chapter or verse from an edition you actually have.
+//     Numbering differs between manuscript recensions and translations.
+//   - Many popular poses are twentieth-century codifications with no
+//     classical source. Say so in historicalNotes rather than staying vague.
 
 const asanas = [
   {
@@ -60,6 +71,17 @@ const asanas = [
       "Practise near a wall or chair if you have low blood pressure or dizziness.",
       "Seek guidance from a teacher if you have a balance disorder.",
     ],
+
+    // ---- Tradition & sources ----
+    sanskritName: "Tadasana",
+    devanagari: "ताडासन",
+    transliteration: "tāḍāsana",
+    tradition: "Modern postural yoga",
+    // sourceText, sourceChapter and sourceVerse are deliberately left unset.
+    // The standing pose taught today as Tadasana is not described under that
+    // name in the classical hatha texts, so there is no citation to give.
+    historicalNotes:
+      "The upright standing pose taught today was codified in twentieth-century Indian physical culture and is closely associated with the school of T. Krishnamacharya. It is also widely taught as Samasthiti. No classical hatha text is known to describe this posture under the name Tadasana.",
   },
   {
     id: 2,
@@ -107,6 +129,16 @@ const asanas = [
       "Avoid or use wall support if you have a knee or ankle injury.",
       "Practise with support if you experience dizziness or vertigo.",
     ],
+
+    // ---- Tradition & sources ----
+    sanskritName: "Vrikshasana",
+    devanagari: "वृक्षासन",
+    transliteration: "vṛkṣāsana",
+    tradition: "Modern postural yoga",
+    // No sourceText: this pose is not described under this name in the
+    // classical hatha texts.
+    historicalNotes:
+      "Standing on one leg appears in Indian art and ascetic practice long before modern yoga, but the balancing pose taught today as Vrikshasana is a modern codification. It is not described under this name in the Hatha Yoga Pradipika or the Gheranda Samhita. The name comes from vṛkṣa, meaning tree.",
   },
   {
     id: 3,
@@ -155,6 +187,19 @@ const asanas = [
       "Avoid with recent abdominal, back or wrist surgery.",
       "Practise only with professional guidance if you have a diagnosed disc condition.",
     ],
+
+    // ---- Tradition & sources ----
+    sanskritName: "Bhujangasana",
+    devanagari: "भुजंगासन",
+    transliteration: "bhujaṅgāsana",
+    tradition: "Hatha yoga",
+    sourceText: "Gheranda Samhita",
+    // sourceChapter and sourceVerse left unset on purpose: verse numbering
+    // differs between manuscript recensions and translations, so a citation
+    // is only meaningful next to a named edition. Fill these in from an
+    // edition you actually have to hand.
+    historicalNotes:
+      "Bhujangasana is among the asanas described in the Gheranda Samhita, a hatha yoga text generally dated to the seventeenth century. The name comes from bhujaṅga, meaning serpent.",
   },
   {
     id: 4,
@@ -1066,6 +1111,16 @@ const asanas = [
       "Seek guidance with sciatica.",
       "Take the legs wide or skip the pose during pregnancy.",
     ],
+
+    // ---- Tradition & sources ----
+    sanskritName: "Paschimottanasana",
+    devanagari: "पश्चिमोत्तानासन",
+    transliteration: "paścimottānāsana",
+    tradition: "Hatha yoga",
+    sourceText: "Hatha Yoga Pradipika",
+    // Chapter and verse left unset — see the note on Bhujangasana.
+    historicalNotes:
+      "One of the small group of asanas described in the first chapter of the Hatha Yoga Pradipika, generally dated to the fifteenth century, and also found in the Gheranda Samhita. The name means the intense stretch of the west — the west being the back of the body.",
   },
   {
     id: 23,
@@ -1258,6 +1313,16 @@ const asanas = [
       "Use a bolster under the head and chest if lying flat causes breathlessness.",
       "Support the knees if lying flat is uncomfortable for the lower back.",
     ],
+
+    // ---- Tradition & sources ----
+    sanskritName: "Savasana",
+    devanagari: "शवासन",
+    transliteration: "śavāsana",
+    tradition: "Hatha yoga",
+    sourceText: "Hatha Yoga Pradipika",
+    // Chapter and verse left unset — see the note on Bhujangasana.
+    historicalNotes:
+      "Described in the first chapter of the Hatha Yoga Pradipika, where lying flat like a corpse is said to remove fatigue and quieten the mind. The name comes from śava, meaning corpse.",
   },
 ];
 

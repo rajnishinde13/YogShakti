@@ -50,8 +50,41 @@ one phase at a time.
 | `contraindications` | `String[]` | when to avoid or seek guidance |
 | `breathing` | `String @db.Text` | prose — a list would be artificial |
 | `duration` | `String` | e.g. "30–60 seconds each side" |
+| `sanskritName` | `String?` | Sanskrit name in Latin script |
+| `devanagari` | `String?` | e.g. `शवासन` |
+| `transliteration` | `String?` | IAST, e.g. `śavāsana` |
+| `tradition` | `String?` | e.g. "Hatha yoga" |
+| `sourceText` | `String?` | e.g. "Hatha Yoga Pradipika" |
+| `sourceChapter` / `sourceVerse` | `String?` | **String, not Int** — sources cite as "II", "28-29" |
+| `historicalNotes` | `String? @db.Text` | short, hedged context |
 | `imageUrl` | `String?` | **reserved**, null for every pose today |
+| `imageAlt` | `String?` | alt text; falls back to the pose name |
+| `imageSource` / `imageLicense` | `String?` | attribution, shown as a caption |
 | `emoji` | `String?` | **unused** — safe to drop in a later migration |
+
+Everything in the tradition and image groups is **optional**. The
+"Tradition & Sources" section on the detail page renders only the fields that
+have values, and disappears entirely when none do.
+
+Only the **address** of an image is ever stored. Image binaries belong in
+object storage or a CDN — putting them in table rows bloats the database and
+slows every backup and query.
+
+### Source integrity
+
+The hardest rule in this project, and the one most worth keeping:
+
+> **Never invent a classical reference.** If the source of a pose is not
+> genuinely known, leave `sourceText` / `sourceChapter` / `sourceVerse` null.
+
+`sourceChapter` and `sourceVerse` are null for every pose right now, on
+purpose. Verse numbering differs between manuscript recensions and
+translations, so a citation only means something next to a named edition.
+Fill them in from an edition you have in front of you, not from memory.
+
+Many popular poses — Tadasana and Vrikshasana among them — are
+twentieth-century codifications with no classical source at all.
+`historicalNotes` says so plainly rather than implying an ancient pedigree.
 
 Lists are PostgreSQL `text[]` arrays. `breathing` and `duration` are single
 strings because each is one continuous piece of guidance.
@@ -346,8 +379,10 @@ the file extension (`"../lib/prisma.js"`, not `"../lib/prisma"`).
 - [x] **Phase 4** — Detail page per pose at `/asana/<slug>`
 - [x] **Phase 5** — Real search API backed by PostgreSQL
 - [x] **Phase 6** — 26 asanas with complete structured detail content
-- [ ] **Phase 7** — Real images: fill the `imageUrl` column
-- [ ] **Phase 8** — Filter by category and level alongside text search
+- [x] **Phase 7** — Source + image metadata; "Tradition & Sources" section
+- [ ] **Phase 8** — Source metadata for the remaining 21 poses
+- [ ] **Phase 9** — Real images: fill `imageUrl`, `imageAlt`, attribution
+- [ ] **Phase 10** — Filter by category and level alongside text search
 
 ### Known limits of the current search
 

@@ -48,7 +48,10 @@ export default function AsanaVisual({ asana, variant = "card" }) {
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={asana.imageUrl}
-          alt={`${asana.name} — ${asana.englishName}`}
+          // Prefer alt text written for the specific photograph. Falling back
+          // to the pose name is better than an empty alt, but a real
+          // description of what the image shows is better still.
+          alt={asana.imageAlt || `${asana.name} — ${asana.englishName}`}
           className="h-full w-full object-cover"
         />
       </div>

@@ -53,7 +53,24 @@ async function getAsana(slug) {
         beginnerTips: true,
         precautions: true,
         contraindications: true,
+
+        // Tradition and sources. All optional — most poses have none of
+        // these, and the section below simply does not render when they are
+        // all null.
+        sanskritName: true,
+        devanagari: true,
+        transliteration: true,
+        tradition: true,
+        sourceText: true,
+        sourceChapter: true,
+        sourceVerse: true,
+        historicalNotes: true,
+
+        // Image and its attribution.
         imageUrl: true,
+        imageAlt: true,
+        imageSource: true,
+        imageLicense: true,
       },
     });
 
@@ -114,6 +131,30 @@ export default async function AsanaDetailPage({ params }) {
     notFound();
   }
 
+  // Build the rows for "Tradition & Sources", keeping only the fields that
+  // actually have a value.
+  //
+  // Most poses have none of these, and even the ones that do rarely have all
+  // of them — so the page has to cope with any combination. Assembling an
+  // array and filtering it is far easier to follow than eight separate
+  // conditionals in the markup, and it guarantees no empty labels appear.
+  const sourceRows = [
+    { label: "Sanskrit name", value: asana.sanskritName },
+    { label: "Devanagari", value: asana.devanagari, large: true },
+    { label: "Transliteration", value: asana.transliteration },
+    { label: "Tradition", value: asana.tradition },
+    { label: "Source text", value: asana.sourceText },
+    {
+      label: "Chapter / verse",
+      // Join whichever of the two exists. If neither does this is an empty
+      // string, and the filter below drops the row entirely.
+      value: [asana.sourceChapter, asana.sourceVerse].filter(Boolean).join(" · "),
+    },
+  ].filter((row) => row.value);
+
+  // The whole section is hidden unless there is something real to put in it.
+  const hasSources = sourceRows.length > 0 || Boolean(asana.historicalNotes);
+
   return (
     <main className="mx-auto max-w-3xl px-4 py-10">
       {/* Back link. <Link> navigates without a full page reload. */}
@@ -125,9 +166,18 @@ export default async function AsanaDetailPage({ params }) {
       </Link>
 
       {/* ---- Visual ---- */}
-      <div className="mt-6">
+      <figure className="mt-6">
         <AsanaVisual asana={asana} variant="detail" />
-      </div>
+
+        {/* Credit line. Only appears once a real image with attribution
+            exists — no pose has one yet, so this renders nothing today. */}
+        {asana.imageSource && (
+          <figcaption className="mt-2 text-xs text-stone-500">
+            Image: {asana.imageSource}
+            {asana.imageLicense && ` · ${asana.imageLicense}`}
+          </figcaption>
+        )}
+      </figure>
 
       {/* ---- Title block ---- */}
       <header className="mt-8 border-b border-stone-200 pb-8">
@@ -232,6 +282,48 @@ export default async function AsanaDetailPage({ params }) {
           </div>
         </div>
       </div>
+
+      {/* ---- Tradition & Sources ----
+          Rendered only when at least one field has a value. Empty labels
+          never appear, because sourceRows was filtered above. */}
+      {hasSources && (
+        <section className="mt-10 rounded-2xl border border-stone-200 bg-stone-50/60 p-6">
+          <h2 className="text-sm font-semibold uppercase tracking-widest text-stone-500">
+            Tradition &amp; Sources
+          </h2>
+
+          {sourceRows.length > 0 && (
+            // A description list: <dt> is the term, <dd> its value. Wrapping
+            // each pair in a <div> to lay them out side by side is valid HTML.
+            <dl className="mt-5 space-y-3">
+              {sourceRows.map((row) => (
+                <div key={row.label} className="sm:flex sm:gap-6">
+                  <dt className="text-sm text-stone-500 sm:w-40 sm:shrink-0">
+                    {row.label}
+                  </dt>
+                  <dd
+                    className={
+                      row.large
+                        ? "text-lg leading-snug text-stone-900"
+                        : "text-sm text-stone-800"
+                    }
+                  >
+                    {row.value}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          )}
+
+          {asana.historicalNotes && (
+            <div className="mt-5 border-t border-stone-200 pt-5">
+              <p className="text-sm leading-relaxed text-stone-600">
+                {asana.historicalNotes}
+              </p>
+            </div>
+          )}
+        </section>
+      )}
 
       <p className="mt-10 border-t border-stone-200 pt-6 text-xs leading-relaxed text-stone-500">
         For learning and general information only — not medical advice. If you

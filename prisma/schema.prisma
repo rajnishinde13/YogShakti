@@ -61,12 +61,45 @@ model Asana {
   breathing String @db.Text // when to inhale and exhale
   duration  String // e.g. "30-60 seconds each side"
 
+  // ---- Tradition and sources ---------------------------------------------
+  //
+  // ALL OPTIONAL. A pose with none of these set simply does not show the
+  // "Tradition & Sources" section — the page renders only what exists.
+  //
+  // Rule for filling these in: leave a field null rather than guessing.
+  // A blank field is honest; an invented chapter and verse is not, and is
+  // the single most common error in yoga reference material.
+
+  sanskritName    String? // the Sanskrit name in Latin script
+  devanagari      String? // the name in Devanagari script, e.g. ताडासन
+  transliteration String? // IAST transliteration, e.g. tāḍāsana
+  tradition       String? // e.g. "Hatha yoga", "Modern postural yoga"
+
+  sourceText    String? // e.g. "Hatha Yoga Pradipika"
+  sourceChapter String? // kept as String — sources use "1", "II", "2.a"
+  sourceVerse   String? // e.g. "28-29". Also a String, for ranges.
+
+  historicalNotes String? @db.Text // short, hedged context
+
   // ---- Visuals -----------------------------------------------------------
 
   // Reserved for a real photograph or illustration. Nullable, because no pose
   // has one yet — the UI draws a placeholder whenever this is empty. Adding
   // images later needs no migration, just values in this column.
+  //
+  // Only the ADDRESS of an image is stored, never the image data itself.
+  // Binary files belong in object storage or a CDN, not in table rows.
   imageUrl String?
+
+  // Alternative text, for screen readers and for when an image fails to load.
+  // If this is null the UI falls back to "<name> — <englishName>".
+  imageAlt String?
+
+  // Attribution. Displayed as a caption beneath the image when present, so
+  // credit and licence terms travel with the picture rather than living in
+  // somebody's notes.
+  imageSource  String? // photographer, illustrator or source page
+  imageLicense String? // e.g. "CC BY-SA 4.0"
 
   // Kept for now but NO LONGER USED by the UI, which draws an abstract mark
   // instead. Optional so new poses need not supply one. Safe to drop in a
