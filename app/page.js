@@ -11,6 +11,7 @@ import { prisma } from "@/lib/prisma";
 
 import Hero from "@/components/Hero";
 import AsanaSearch from "@/components/AsanaSearch";
+import About from "@/components/About";
 
 // Without this, Next.js would run the query ONCE at build time and serve the
 // same frozen HTML forever. "force-dynamic" asks for a fresh query on every
@@ -67,12 +68,23 @@ async function getAsanas() {
 export default async function HomePage() {
   const asanas = await getAsanas();
 
+  // Every branch below renders <Hero />, then its own middle section, then
+  // <About />. About is repeated on purpose: the header's "About" link points
+  // at /#about, so that section has to exist even when the database is down —
+  // otherwise the link breaks exactly when something has already gone wrong.
+  //
+  // The id="asanas" on each middle section is there for the same reason. The
+  // header's "Asanas" link needs somewhere to land in every case.
+
   // CASE 1 — the database could not be reached.
   if (asanas === null) {
     return (
       <main>
         <Hero />
-        <section className="mx-auto max-w-xl px-4 py-16 text-center">
+        <section
+          id="asanas"
+          className="mx-auto max-w-xl px-4 py-16 text-center"
+        >
           <p className="text-3xl" aria-hidden="true">
             ⚠️
           </p>
@@ -87,6 +99,7 @@ export default async function HomePage() {
             brew services start postgresql@14
           </code>
         </section>
+        <About />
       </main>
     );
   }
@@ -96,7 +109,10 @@ export default async function HomePage() {
     return (
       <main>
         <Hero />
-        <section className="mx-auto max-w-xl px-4 py-16 text-center">
+        <section
+          id="asanas"
+          className="mx-auto max-w-xl px-4 py-16 text-center"
+        >
           <p className="text-3xl" aria-hidden="true">
             🌱
           </p>
@@ -110,15 +126,18 @@ export default async function HomePage() {
             npm run db:seed
           </code>
         </section>
+        <About />
       </main>
     );
   }
 
   // CASE 3 — the normal path. Hand the rows to the browser component.
+  // AsanaSearch renders the section carrying id="asanas".
   return (
     <main>
       <Hero />
       <AsanaSearch asanas={asanas} />
+      <About />
     </main>
   );
 }
